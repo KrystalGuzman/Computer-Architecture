@@ -12,7 +12,6 @@ class CPU:
         self.pc = 0
         self.running = False
         self.SP = 7
-        self.reg[self.SP] = 0xF4
         self.branchtable = {
             0b00000001: self.op_HLT,
             0b10000010: self.op_LDI,
@@ -25,11 +24,13 @@ class CPU:
             0b10100000: self.op_ADD
         }
 
-    def load(self, program):
+    def load(self):
         """Load a program into memory."""
 
         address = 0
+        
 
+        
         # For now, we've just hardcoded a program:
 
         # program = [
@@ -41,10 +42,32 @@ class CPU:
         #     0b00000000,
         #     0b00000001, # HLT
         # ]
+        if len(sys.argv) < 2:
+            print("Please pass in a second filename: python first_filename.py second_filename.py")
+            sys.exit()
+        try:
+            file_name = sys.argv[1]
+            with open(file_name) as file:
+                for line in file:
+                    split_line = line.split('#')[0]
+                    command = split_line.strip()
 
-        for instruction in program:
-            self.ram[address] = instruction
-            address += 1
+                    if command == '':
+                        continue
+
+                    instruction = int(command, 2)
+                    self.ram[address] = instruction
+
+                    address += 1
+
+        except FileNotFoundError:
+            print(f'{sys.argv[0]}: {sys.argv[1]} file was not found')
+            sys.exit()
+
+    
+        # for instruction in program:
+        #     self.ram[address] = instruction
+        #     address += 1
         
     def ram_read(self, MAR):
         # MAR is address
