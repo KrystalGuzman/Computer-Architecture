@@ -12,6 +12,7 @@ class CPU:
         self.pc = 0
         self.running = False
         self.SP = 7
+        self.reg[self.SP] = 0xF4
         self.branchtable = {
             0b00000001: self.op_HLT,
             0b10000010: self.op_LDI,
@@ -28,8 +29,6 @@ class CPU:
         """Load a program into memory."""
 
         address = 0
-        
-
         
         # For now, we've just hardcoded a program:
 
@@ -64,10 +63,6 @@ class CPU:
             print(f'{sys.argv[0]}: {sys.argv[1]} file was not found')
             sys.exit()
 
-    
-        # for instruction in program:
-        #     self.ram[address] = instruction
-        #     address += 1
         
     def ram_read(self, MAR):
         # MAR is address
@@ -134,30 +129,44 @@ class CPU:
         self.running = False
 
     def op_LDI(self):
+        '''
+        sets specified register to a specified value
+        '''
         operand_a = self.ram[self.pc+1]
         operand_b = self.ram[self.pc+2]
         self.reg[operand_a] = operand_b
         self.pc += 3
 
     def op_PRN(self):
+        '''
+        prints specified value
+        '''
         operand_a = self.ram[self.pc+1]
         print(self.reg[operand_a])
         self.pc += 2
 
     def op_MUL(self):
+        '''
+        multiplies values using alu
+        '''
         operand_a = self.ram[self.pc+1]
         operand_b = self.ram[self.pc+2]
         self.alu('MUL', operand_a, operand_b)
         self.pc += 3
     
     def op_ADD(self):
+        '''
+        adds values using alu
+        '''
         operand_a = self.ram[self.pc+1]
         operand_b = self.ram[self.pc+2]
         self.alu('ADD', operand_a, operand_b)
         self.pc += 3
 
     def op_PUSH(self):
-        
+        '''
+        adds to stack
+        '''
         # Decrement the SP.
         # Copy the value in the given
         # register to the address pointed to by SP.
@@ -170,6 +179,9 @@ class CPU:
         self.pc += 2
 
     def op_POP(self):
+        '''
+        removes from stack
+        '''
         # Copy the value from the address pointed
         # to by SP to the given register.
         # Increment SP.
@@ -182,6 +194,9 @@ class CPU:
         self.pc += 2
 
     def op_CALL(self):
+        '''
+        jumps to address
+        '''
         # compute return address
         return_addr = self.pc + 2
 
@@ -195,9 +210,18 @@ class CPU:
         self.pc = dest_addr
 
     def op_RET(self):
+        '''
+        returns back to where it was called from
+        '''
         # pop return address from top of stack
         return_addr = self.ram[self.reg[self.SP]]
         self.reg[self.SP] += 1
 
         # set the pc
         self.pc = return_addr
+
+    def op_JMP(self):
+        # Jump to the address stored in the given register.
+        reg_num = self.ram[self.pc+1]
+        # Set the PC to the address stored in the given register.
+        self.pc = self.reg[reg_num]
