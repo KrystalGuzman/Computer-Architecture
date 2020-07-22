@@ -13,6 +13,7 @@ class CPU:
         self.running = False
         self.SP = 7
         self.reg[self.SP] = 0xF4
+        self.FL = 0b00000000
         self.branchtable = {
             0b00000001: self.op_HLT,
             0b10000010: self.op_LDI,
@@ -22,7 +23,9 @@ class CPU:
             0b01000110: self.op_POP,
             0b01010000: self.op_CALL,
             0b00010001: self.op_RET,
-            0b10100000: self.op_ADD
+            0b10100000: self.op_ADD,
+            0b10100001: self.op_SUB,
+            0b10100011: self.op_DIV
         }
 
     def load(self):
@@ -78,13 +81,21 @@ class CPU:
         # the address to write it to
         self.ram[MAR] = MDR
 
-    def alu(self, op, reg_a, reg_b):
+    def alu(self, op, reg_a, reg_b=None):
         """ALU operations."""
 
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
         elif op == "MUL":
             self.reg[reg_a] *= self.reg[reg_b]
+        elif op == "SUB":
+            self.reg[reg_a] -= self.reg[reg_b]
+        elif op == "DIV":
+            if reg_b == 0:
+                print("Cannot divide by zero.")
+                self.branchtable[0b00000001]() # halt
+            else:
+                self.reg[reg_a] = self.reg[reg_a] // self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
     
@@ -220,8 +231,20 @@ class CPU:
         # set the pc
         self.pc = return_addr
 
-    def op_JMP(self):
-        # Jump to the address stored in the given register.
-        reg_num = self.ram[self.pc+1]
-        # Set the PC to the address stored in the given register.
-        self.pc = self.reg[reg_num]
+    def op_SUB(self):
+        '''
+        adds values using alu
+        '''
+        operand_a = self.ram[self.pc+1]
+        operand_b = self.ram[self.pc+2]
+        self.alu('SUB', operand_a, operand_b)
+        self.pc += 3
+
+    def op_DIV(self):
+        '''
+        adds values using alu
+        '''
+        operand_a = self.ram[self.pc+1]
+        operand_b = self.ram[self.pc+2]
+        self.alu('DIV', operand_a, operand_b)
+        self.pc += 3
