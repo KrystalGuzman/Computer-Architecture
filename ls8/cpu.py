@@ -25,7 +25,18 @@ class CPU:
             0b00010001: self.op_RET,
             0b10100000: self.op_ADD,
             0b10100001: self.op_SUB,
-            0b10100011: self.op_DIV
+            0b10100011: self.op_DIV,
+            0b10100111: self.op_CMP,
+            0b01010100: self.op_JMP,
+            0b01010101: self.op_JEQ,
+            0b01010110: self.op_JNE,
+            0b10101000: self.op_AND,
+            0b10101010: self.op_OR,
+            0b01101001: self.op_NOT,
+            0b10101011: self.op_XOR,
+            0b10101100: self.op_SHL,
+            0b10101101: self.op_SHR,
+            0b10100100: self.op_MOD
         }
 
     def load(self):
@@ -96,6 +107,37 @@ class CPU:
                 self.branchtable[0b00000001]() # halt
             else:
                 self.reg[reg_a] = self.reg[reg_a] // self.reg[reg_b]
+        elif op == "CMP":
+            # 00000LGE
+            if self.reg[reg_a] == self.reg[reg_b]:
+                # set the E flag to 1
+                self.FL = 0b00000001
+            elif self.reg[reg_a] < self.reg[reg_b]:
+                # set the L flag to 1
+                self.FL = 0b00000100
+            elif self.reg[reg_a] > self.reg[reg_b]:
+                # set the G flag to 1
+                self.FL = 0b00000010
+        elif op == "AND":
+            print("AND ",bin(self.reg[reg_a] & self.reg[reg_b]))
+        elif op == "OR":
+            print("OR" ,bin(self.reg[reg_a] | self.reg[reg_b]))
+        elif op == "NOT":
+            mask = 0b11111111
+            print("NOT" ,bin(self.reg[reg_a] ^ mask))
+        elif op == "XOR":
+            print("XOR ",bin(self.reg[reg_a] ^ self.reg[reg_b]))
+        elif op == "SHL":
+            print("SHL ", bin(self.reg[reg_a] << self.reg[reg_b]))
+        elif op == "SHR":
+            print("SHR ",bin(self.reg[reg_a] >> self.reg[reg_b]))
+        elif op == "MOD":
+            if reg_b == 0:
+                print("Cannot mod by zero.")
+                self.branchtable[0b00000001]() # halt
+            else:
+                self.reg[reg_a] = self.reg[reg_a] % self.reg[reg_b]
+        
         else:
             raise Exception("Unsupported ALU operation")
     
@@ -247,4 +289,99 @@ class CPU:
         operand_a = self.ram[self.pc+1]
         operand_b = self.ram[self.pc+2]
         self.alu('DIV', operand_a, operand_b)
+        self.pc += 3
+
+    def op_CMP(self):
+
+        # Compares the values in two registers.
+        # increment PC by 3
+        operand_a = self.ram[self.pc+1]
+        operand_b = self.ram[self.pc+2]
+        self.alu('CMP', operand_a, operand_b)
+        self.pc += 3
+    
+    def op_JMP(self):
+        # Jump to the address stored in the given register.
+        reg_num = self.ram[self.pc+1]
+        # Set the PC to the address stored in the given register.
+        self.pc = self.reg[reg_num]
+
+    def op_JEQ(self):
+        # If equal flag is set (true),
+        # jump to the address stored in the given register.
+        reg_num = self.ram[self.pc+1]
+        if self.FL & 0b00000001 == 1:
+            self.pc = self.reg[reg_num]
+        else:
+            self.pc += 2
+
+    def op_JNE(self):
+        # If E flag is clear (false, 0),
+        # jump to the address stored in the given register.
+        reg_num = self.ram[self.pc+1]
+        if self.FL & 0b00000001 == 0:
+            self.pc = self.reg[reg_num]
+        else:
+            self.pc += 2
+
+    def op_AND(self):
+        '''
+        ands values using alu
+        '''
+        operand_a = self.ram[self.pc+1]
+        operand_b = self.ram[self.pc+2]
+        self.alu('AND', operand_a, operand_b)
+        self.pc += 3
+    
+    def op_OR(self):
+        '''
+        ors values using alu
+        '''
+        operand_a = self.ram[self.pc+1]
+        operand_b = self.ram[self.pc+2]
+        self.alu('OR', operand_a, operand_b)
+        self.pc += 3
+    
+    def op_XOR(self):
+        '''
+        xors values using alu
+        '''
+        operand_a = self.ram[self.pc+1]
+        operand_b = self.ram[self.pc+2]
+        self.alu('XOR', operand_a, operand_b)
+        self.pc += 3
+    
+    def op_NOT(self):
+        '''
+        nots value using alu
+        '''
+        operand_a = self.ram[self.pc+1]
+        self.alu('NOT', operand_a)
+        self.pc += 2
+
+    def op_SHL(self):
+        '''
+        shls values using alu
+        '''
+        operand_a = self.ram[self.pc+1]
+        operand_b = self.ram[self.pc+2]
+        self.alu('SHL', operand_a, operand_b)
+        self.pc += 3
+
+    def op_SHR(self):
+        '''
+        shrs values using alu
+        '''
+        operand_a = self.ram[self.pc+1]
+        operand_b = self.ram[self.pc+2]
+        self.alu('SHR', operand_a, operand_b)
+        self.pc += 3
+
+    def op_MOD(self):
+        '''
+        ands values using alu
+        '''
+        operand_a = self.ram[self.pc+1]
+        operand_b = self.ram[self.pc+2]
+        self.alu('MOD', operand_a, operand_b)
         self.pc += 3
